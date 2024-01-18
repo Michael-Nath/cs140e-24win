@@ -16,5 +16,9 @@ $(SUBDIRS): force
 clean:
 	rm -f *~ *.bak
 
+test: mem-op.S test.c 2-wait-copy.c
+	arm-none-eabi-gcc -O2 -march=armv6 -c mem-op.S
+	arm-none-eabi-gcc -O2 -march=armv6 -c test.c
+	arm-none-eabi-gcc -O2 -march=armv6 -c 2-wait-copy.c
 .PHONY: force
 	force :;

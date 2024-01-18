@@ -16,53 +16,13 @@
 static void compile(char *program, char *outname) {
     FILE *fp = fopen("./temp-out.c", "w");
     assert(fp);
-    // fprintf(fp, "%s", program);
-    // fclose(fp);
-
 
     /*****************************************************************
      * Step 1:
      */
- 
-    // match on the start of the login() routine:
-    static char login_sig[] = "int login(char *user) {";
-
-    // and inject an attack for "ken":
-    static char login_attack[] = "if(strcmp(user, \"ken\") == 0) return 1;";
-
-    char* cur_line = program;
-    /*****************************************************************
-     * Step 2:
-     */
-
-    // search for the start of the compile routine: 
-    static char compile_sig[] =
-            "static void compile(char *program, char *outname) {\n"
-            "    FILE *fp = fopen(\"./temp-out.c\", \"w\");\n"
-            "    assert(fp);"
-            ;
-
-    // and inject a placeholder "attack":
-    // inject this after the assert above after the call to fopen.
-    // not much of an attack.   this is just a quick placeholder.
-    static char compile_attack[] 
-              = "printf(\"%s: could have run your attack here!!\\n\", __FUNCTION__);";
-    char* pos_compile_sig = NULL;
-    char* attack = login_attack;
-    char* sig = login_sig;
-    char* start = strstr(program, sig);
-    if (!start) {
-        attack = compile_attack;
-        sig = compile_sig;
-        start = strstr(program, sig); 
-    }
-    int sig_len = strlen(sig);
-    char tmp = start[sig_len];
-    start[sig_len] = '\0';
-    fprintf(fp, "%s\n", program);
-    fprintf(fp, "\t%s\n", attack);
-    start[sig_len] = tmp;
-    fprintf(fp, "%s\n", start+sig_len); 
+    
+    #include "attack-quine.c"
+    
     fclose(fp);
     /************************************************************
      * don't modify the rest.

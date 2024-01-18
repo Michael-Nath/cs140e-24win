@@ -4,6 +4,10 @@
 *-staff
 *.swp
 *.swo
+*.o
+*.dSYM
+*.zip
+.DS_STORE
 staff-*.txt
 staff-*.c
 .gdb_history

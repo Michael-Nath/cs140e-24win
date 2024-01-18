@@ -14,7 +14,8 @@ enum {
     GPIO_BASE = 0x20200000,
     gpio_set0  = (GPIO_BASE + 0x1C),
     gpio_clr0  = (GPIO_BASE + 0x28),
-    gpio_lev0  = (GPIO_BASE + 0x34)
+    gpio_lev0  = (GPIO_BASE + 0x34),
+    gpio_fsel0 = 0x20200000
 };
 
 //
@@ -28,9 +29,17 @@ enum {
 void gpio_set_output(unsigned pin) {
     if(pin >= 32)
         return;
-
+  
   // implement this
   // use <gpio_fsel0>
+  unsigned* corresponding_fsel = (unsigned*) gpio_fsel0 + (pin / 10);
+  unsigned relative = (pin % 10) * 3;
+  unsigned mask = 0x111 << pin;
+  unsigned masked_out = get32(corresponding_fsel);
+  masked_out &= ~mask;
+  put32(corresponding_fsel, masked_out);
+  unsigned new_register_value = *corresponding_fsel | (0x1 << relative);
+  put32(corresponding_fsel, new_register_value);
 }
 
 // set GPIO <pin> on.
@@ -39,6 +48,7 @@ void gpio_set_on(unsigned pin) {
         return;
   // implement this
   // use <gpio_set0>
+  PUT32(gpio_set0, 0x1 << pin);
 }
 
 // set GPIO <pin> off
@@ -47,6 +57,7 @@ void gpio_set_off(unsigned pin) {
         return;
   // implement this
   // use <gpio_clr0>
+  PUT32(gpio_clr0, 0x1 << pin);
 }
 
 // set <pin> to <v> (v \in {0,1})
@@ -64,6 +75,15 @@ void gpio_write(unsigned pin, unsigned v) {
 // set <pin> to input.
 void gpio_set_input(unsigned pin) {
   // implement.
+  if(pin >= 32)
+        return;
+  
+  unsigned* corresponding_fsel = (unsigned*) gpio_fsel0 + (pin / 10);
+  unsigned relative = (pin % 10) * 3;
+  unsigned mask = 0x111 << pin;
+  unsigned masked_out = get32(corresponding_fsel);
+  masked_out &= ~mask;
+  put32(corresponding_fsel, masked_out);
 }
 
 // return the value of <pin>
@@ -71,5 +91,9 @@ int gpio_read(unsigned pin) {
   unsigned v = 0;
 
   // implement.
+  unsigned mask = ~(0x1 << pin);
+  v = GET32(gpio_lev0);
+  v &= ~mask;
+  v = v >> pin;
   return v;
 }
