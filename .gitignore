@@ -7,7 +7,16 @@
 *.o
 *.dSYM
 *.zip
+*.d
+*.bin
+*.out
+*.fake
+*.raw
 .DS_STORE
 staff-*.txt
 staff-*.c
 .gdb_history
+*.elf
+*.list
+*.mk
+*.a

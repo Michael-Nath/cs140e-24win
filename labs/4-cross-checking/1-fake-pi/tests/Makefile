@@ -36,20 +36,20 @@
 #   TEST_SRC += $(wildcard ./[1]-*.c)
 
 # 1. do a single 0-*.c test file since easy.
-TEST_SRC := 0-gpio-write-17.c
+# TEST_SRC := act-set-output.c
 
 # 2. do all the 0-* test files (uncomment)
 # TEST_SRC := $(wildcard ./[0]-*.c)
 
 # 3. then do the 1-*.c tests (uncomment)
-# TEST_SRC := $(wildcard ./[1]-*.c)
+# TEST_SRC := $(wildcard ./[0-5]-*.c)
 
 # 4. do the act tests.  you'll have to add addresses
 # to fake-pi.c
 # TEST_SRC :=  $(wildcard ./act-*.c) 
 
 # 6. then do everything.
-# TEST_SRC := $(wildcard ./[0-5]-*.c) $(wildcard ./prog-*.c)  $(wildcard ./act-*.c) 
+TEST_SRC := $(wildcard ./[0-5]-*.c) $(wildcard ./prog-*.c)  $(wildcard ./act-*.c) 
 
 ###############################################################################
 
@@ -99,8 +99,8 @@ checkoff: $(DEPS)
 	@ls $(TEST_OUT)
 	@echo -n "total files = ";
 	@ls $(TEST_OUT) | wc  -l
-	@echo -n "checksum of cksum command <ls TEST_OUT| sort -n | cksum> =\n   ";
-	@ls $(TEST_OUT) | sort -n | cksum 
+	@echo -n "checksum of cksum command <cksum TEST_OUT| sort -n | cksum> =\n   ";
+	@cksum $(TEST_OUT) | sort -n | cksum 
 
 cleanall: clean
 	rm -f *.out  *.raw
