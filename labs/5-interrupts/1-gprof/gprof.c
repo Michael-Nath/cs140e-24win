@@ -16,6 +16,10 @@
 // etc.
 #include "memmap.h"
 
+static unsigned *histogram;
+static unsigned length;
+static unsigned DUMP_ON = 0;
+
 /***************************************************************************
  * gprof implementation:
  *	- allocate a table with one entry for each instruction.
@@ -27,20 +31,30 @@
 // allocate table.
 //    few lines of code
 static unsigned gprof_init(void) {
-    unimplemented();
+    length = __code_end__ - __code_start__;
+    histogram = kmalloc(sizeof(unsigned) * length);
+    return 4 * length;
 }
 
 // increment histogram associated w/ pc.
 //    few lines of code
 static void gprof_inc(unsigned pc) {
-    unimplemented();
+    if (DUMP_ON) 
+        return;
+    unsigned location = (pc - (unsigned) __code_start__) / 4; 
+    histogram[location]++;
 }
 
 // print out all samples whose count > min_val
 //
 // make sure sampling does not pick this code up!
 static void gprof_dump(unsigned min_val) {
-    unimplemented();
+    DUMP_ON = 1;
+    for (unsigned i = 0; i < length; i++) {
+        if (histogram[i] > min_val)
+            printk("%p: %d\n", __code_start__ + i, histogram[i]);
+    }
+    DUMP_ON = 0;
 }
 
 

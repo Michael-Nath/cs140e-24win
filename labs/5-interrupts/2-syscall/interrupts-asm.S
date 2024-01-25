@@ -48,6 +48,7 @@ _interrupt_table:
   ldr pc, _data_abort_asm
   ldr pc, _reset_asm
   ldr pc, _interrupt_asm
+
 fast_interrupt_asm:
   sub   lr, lr, #4 @First instr of FIQ handler
   push  {lr}
@@ -95,8 +96,18 @@ software_interrupt_asm:
     @   - call
     @   - restore regs
     @   - return from the exception.
-    asm_not_implemented()
+    push {r4-r11, lr}
+    mov r1, r0
+    sub r0, lr, #4
+    bl syscall_vector
+    pop {r4-r11, lr}
     movs pc, lr
+
+software_interrupt_asm_two:
+  mov r1, r0
+  sub r0, lr, #4
+  bl syscall_vector
+  movs pc, lr
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @ we don't generate any of these, will just panic and halt.

@@ -17,7 +17,6 @@ void run_user_code_asm(void (*fn)(void), void *stack);
 void run_user_code(void (*fn)(void), void *stack) {
     assert(stack);
     demand((unsigned)stack % 8 == 0, stack must be 8 byte aligned);
-
     run_user_code_asm(fn, stack);
     not_reached();
 }
@@ -52,9 +51,9 @@ void user_fn(void) {
 
 
     // you should put the <cpsr> mode in <mode>
-    unsigned mode = 0;
-    todo("check that the current mode is USER_LEVEL");
-
+    unsigned mode = cpsr_get();
+    mode = mode & 0b11111;
+    // todo("check that the current mode is USER_LEVEL");
 
     if(mode != USER_MODE)
         panic("mode = %b: expected %b\n", mode, USER_MODE);
@@ -76,8 +75,15 @@ void user_fn(void) {
 int syscall_vector(unsigned pc, uint32_t r0) {
     uint32_t inst, sys_num, mode;
 
-    todo("get <spsr> and check that mode bits = USER level\n");
+    // todo("get <spsr> and check that mode bits = USER level\n");
 
+    uint32_t spsr;
+    asm volatile("mrs %0,spsr" : "=r"(spsr)); 
+    mode = spsr & (0b11111);
+    inst = *((uint32_t*) pc);
+
+    uint32_t mask = 0xFFFFFF; // FFFFFF -> expands to twenty-four 1s
+    sys_num = (inst & mask); 
 
     // do not change this code!
     if(mode != USER_MODE)
@@ -100,18 +106,18 @@ int syscall_vector(unsigned pc, uint32_t r0) {
 }
 
 void notmain() {
-    todo("use int_init_vec to install vector with a different swi handler");
+    // todo("use int_init_vec to install vector with a different swi handler");
 
-#if 0
+#if 1
     // you'll have to define these two symbols: swi instructions
     // should get routed to <syscall_vector>
-    extern uint32_t _int_table_user[], _int_table_user_end[];
-    int_init_vec(_int_table_user, _int_table_user_end);
+    extern uint32_t _interrupt_table[], _interrupt_table_end[];
+    int_init_vec(_interrupt_table, _interrupt_table_end);
 #endif
-    todo("define int_table_user interrupts-asm.S: should set stack pointer!");
+    // todo("define int_table_user interrupts-asm.S: should set stack pointer!");
 
-    todo("set <sp> to a reasonable stack address in <stack>");
-    uint64_t *sp = 0;
+    // todo("set <sp> to a reasonable stack address in <stack>");
+    uint64_t *sp = &stack[64];
 
     output("calling user_fn with stack=%p\n", sp);
     // will call user_fn with stack pointer <sp>
