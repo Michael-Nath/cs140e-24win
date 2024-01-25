@@ -36,7 +36,7 @@
 #   TEST_SRC += $(wildcard ./[1]-*.c)
 
 # 1. do a single 0-*.c test file since easy.
-# TEST_SRC := act-set-output.c
+# TEST_SRC := prog-1-blink.c
 
 # 2. do all the 0-* test files (uncomment)
 # TEST_SRC := $(wildcard ./[0]-*.c)

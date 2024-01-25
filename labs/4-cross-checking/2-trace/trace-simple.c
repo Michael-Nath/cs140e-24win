@@ -62,13 +62,30 @@ static void emit_get32(uint32_t addr, uint32_t val) {
 
 // the linker will change all calls to GET32 to call __wrap_GET32
 void __wrap_PUT32(unsigned addr, unsigned val) {
+    int prev_state = state;
+    // if the system is set to trace, then temporarily disable it to prevent infinite recursion
+    if (prev_state == TRACE_ON) {
+        state = TRACE_OFF;
+        emit_put32(addr, val);
+    }
+    // if system was never set to trace, value of <state> is effectively unchanged
+    // otherwise it's reset to what it originally was
+    state = prev_state;
     __real_PUT32(addr, val);
 }
 
 // the linker will change all calls to GET32 to call __wrap_GET32
 unsigned __wrap_GET32(unsigned addr) {
     unsigned v = 0;
-    // implement this function!
+    // if the system is set to trace, then temporarily disable it to prevent infinite recursion
+    int prev_state = state;
     v = __real_GET32(addr);
+    if (prev_state == TRACE_ON) {
+        state = TRACE_OFF;
+        emit_get32(addr, v);
+    }
+    // if system was never set to trace, value of <state> is effectively unchanged
+    // otherwise it's reset to what it originally was
+    state = prev_state;
     return v;
 }
