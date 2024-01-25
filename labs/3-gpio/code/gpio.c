@@ -27,7 +27,17 @@ enum {
 // note: fsel0, fsel1, fsel2 are contiguous in memory, so you
 // can (and should) use array calculations!
 void gpio_set_output(unsigned pin) {
-  gpio_set_function(pin, GPIO_FUNC_OUTPUT);
+  if(pin >= 32 && pin != 47)
+    return;
+  if (GPIO_FUNC_OUTPUT & ~0b111)
+    return;
+  unsigned* corresponding_fsel = (unsigned*) gpio_fsel0 + (pin / 10);
+  unsigned relative = (pin % 10) * 3;
+  unsigned mask = 0b111 << relative;
+  unsigned masked_out = get32(corresponding_fsel);
+  masked_out &= ~mask;
+  unsigned new_register_value = masked_out | (GPIO_FUNC_OUTPUT << relative);
+  put32(corresponding_fsel, new_register_value); 
 }
 
 // set GPIO <pin> on.
@@ -67,7 +77,18 @@ void gpio_write(unsigned pin, unsigned v) {
 // set <pin> to input.
 void gpio_set_input(unsigned pin) {
   // implement.
-gpio_set_function(pin, GPIO_FUNC_INPUT);
+// gpio_set_function(pin, GPIO_FUNC_INPUT);
+if(pin >= 32 && pin != 47)
+    return;
+  if (GPIO_FUNC_INPUT & ~0b111)
+    return;
+  unsigned* corresponding_fsel = (unsigned*) gpio_fsel0 + (pin / 10);
+  unsigned relative = (pin % 10) * 3;
+  unsigned mask = 0b111 << relative;
+  unsigned masked_out = get32(corresponding_fsel);
+  masked_out &= ~mask;
+  unsigned new_register_value = masked_out | (GPIO_FUNC_INPUT << relative);
+  put32(corresponding_fsel, new_register_value); 
 }
 
 // return the value of <pin>
@@ -81,7 +102,8 @@ int gpio_read(unsigned pin) {
   v = GET32(gpio_lev0);
   v &= ~mask;
   v = v >> pin;
-  return DEV_VAL32(v);
+  // return DEV_VAL32(v);
+  return v;
 }
 
 void gpio_set_function(unsigned pin, gpio_func_t function) {
