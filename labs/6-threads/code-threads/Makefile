@@ -15,32 +15,32 @@
 
 
 # set this to 1 if you want the programs to run automatically.
-RUN=0
+# RUN=0
 
 # switch these when implemented.
-# COMMON_SRC += rpi-thread-asm.S 
-STAFF_OBJS += staff-rpi-thread-asm.o
+COMMON_SRC += rpi-thread-asm.S 
+# STAFF_OBJS += staff-rpi-thread-asm.o
 
 # switch these when implemented.
-# COMMON_SRC += rpi-thread.c
-STAFF_OBJS += staff-rpi-thread.o
+COMMON_SRC += rpi-thread.c
+# STAFF_OBJS += staff-rpi-thread.o
 STAFF_OBJS += staff-kmalloc.o
 
 # checkoff skips 1 since behavior changes
 
 # the different tests: start with 1, then 2, then..
-PROGS = $(wildcard ./7-test*.c)
-PROGS = $(wildcard ./6-test*.c)
-PROGS = $(wildcard ./5-test*.c)
+# PROGS = $(wildcard ./7-test*.c)
+# PROGS = $(wildcard ./6-test*.c)
+# PROGS = $(wildcard ./5-test*.c)
 # ...
-PROGS = $(wildcard ./4-test*.c)
-PROGS = $(wildcard ./1-test*.c)
+# PROGS = $(wildcard ./4-test*.c)
+# PROGS = $(wildcard ./1-test*.c)
 
 # all the tests.  
 PROGS = $(wildcard ./[234567]-test*.c)
 
 # PROGS = $(wildcard ./1-test*.c)
-# PROGS = 1-test-run-one.c
+# PROGS = 5-test-restart.c
 
 ######################################################################
 # should not have to modify below.

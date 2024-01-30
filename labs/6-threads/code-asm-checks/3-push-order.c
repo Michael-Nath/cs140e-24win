@@ -22,11 +22,11 @@ void notmain() {
     if(v[2] == val2 && v[1] == val1) {
         assert(v[3] == 4);
         assert(v[0] == 1);
-        todo("what does this imply?\n");
+        trace("larger numbered registers get stored at higher addresses + modify before sp move\n");
     } else if(v[1] == val2 && v[0] == val1) {
         assert(v[3] == 4);
         assert(v[2] == 3);
-        todo("what does this imply?\n");
+        trace("larger numbered registers get stored at higher addresses + modify after sp move\n");
     } else 
         panic("unexpected result\n");
 }

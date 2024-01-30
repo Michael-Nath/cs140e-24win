@@ -8,7 +8,11 @@
 #include "rpi.h"
 
 int stack_grows_down(void) {
-    todo("implement this routine\n");
+    volatile int x = 10;
+    volatile int y = 20;
+    if (&y < &x)
+        return 1;
+    return 0;
 }
 
 void notmain(void) {
