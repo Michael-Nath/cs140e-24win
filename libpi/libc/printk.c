@@ -1,6 +1,8 @@
 #include "rpi.h"
 
-#define putchar rpi_putchar
+#ifndef putchar
+#   define putchar rpi_putchar
+#endif
 
 static void emit_val(unsigned base, uint32_t u) {
     char num[33], *p = num;
