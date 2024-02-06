@@ -8,7 +8,7 @@ PROGS = $(wildcard ./output-test-0-hello.c)
 
 COMMON_SRC = cstart.c
 # if you commment this out, will be using our libpi version: should pass!
-COMMON_SRC += uart.c
+# COMMON_SRC += uart.c
 
 # uncomment if you want it to automatically run.
 # RUN=1

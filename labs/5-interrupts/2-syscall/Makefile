@@ -5,7 +5,7 @@ COMMON_SRC := syscall-asm.S  interrupts-asm.S
 # we use the libpi interrupts-c.c
 
 # uncomment if you want it to automatically run.
-# RUN=1
+RUN=1
 
 # define this if you need to give the device for your pi
 TTYUSB = 

@@ -3,6 +3,7 @@
 #include "cycle-count.h"
 #include "cycle-util.h"
 
+#include "wait-routines.h"
 #include <stdarg.h>
 
 // do this first: used timed_write to cleanup.
@@ -14,7 +15,21 @@ void sw_uart_put8(sw_uart_t *uart, uint8_t c) {
              u = n,
              s = cycle_cnt_read();
 
-    todo("implement this code\n");
+    // start bit (default is 1, so start = writing 0.
+    gpio_write(tx,0); wait_ncycles_exact(s,u);  u +=n;
+
+    // transmitting the byte/
+    gpio_write(tx, (c>> 0)&1); wait_ncycles_exact(s, u);  u +=n;
+    gpio_write(tx, (c>> 1)&1); wait_ncycles_exact(s, u);  u +=n;
+    gpio_write(tx, (c>> 2)&1); wait_ncycles_exact(s, u);  u +=n;
+    gpio_write(tx, (c>> 3)&1); wait_ncycles_exact(s, u);  u +=n;
+    gpio_write(tx, (c>> 4)&1); wait_ncycles_exact(s, u);  u +=n;
+    gpio_write(tx, (c>> 5)&1); wait_ncycles_exact(s, u);  u +=n;
+    gpio_write(tx, (c>> 6)&1); wait_ncycles_exact(s, u);  u +=n;
+    gpio_write(tx, (c>> 7)&1); wait_ncycles_exact(s, u);  u +=n;
+
+    // stop bit (has to be 1 for at least n cycles)
+    gpio_write(tx,1); wait_ncycles_exact(s,u); 
 }
 
 // do this second: you can type in pi-cat to send stuff.
@@ -26,8 +41,17 @@ int sw_uart_get8_timeout(sw_uart_t *uart, uint32_t timeout_usec) {
     // right away (used to be return never).
     while(!wait_until_usec(rx, 0, timeout_usec))
         return -1;
-
-    todo("implement this code\n");
+    
+    uint32_t n = uart->cycle_per_bit,
+             u = n,
+             s = cycle_cnt_read();
+    uint8_t byte = 0;
+    for (char i = 0; i < 8; i++) {
+        byte |= (gpio_read(rx) << i);
+        wait_ncycles_exact(s, u);
+        u += n;
+    }
+    return byte;
 }
 
 // finish implementing this routine.  
@@ -48,7 +72,11 @@ sw_uart_t sw_uart_init_helper(unsigned tx, unsigned rx,
         panic("too much diff: cyc_per_bit = %d * baud = %d\n", 
             cyc_per_bit, cyc_per_bit * baud);
 
-    todo("setup rx,tx and initial state of tx pin.");
+    
+    gpio_set_output(tx);
+    gpio_set_input(rx);
+    gpio_write(tx, 1); // by default it should be high
+
 
     return (sw_uart_t) { 
             .tx = tx, 

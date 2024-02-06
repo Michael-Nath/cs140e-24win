@@ -27,5 +27,13 @@ void *read_file(unsigned *size, const char *name) {
     //    - fclose() the file descriptor
     //    - make sure any padding bytes have zeros.
     //    - return it.   
-    unimplemented();
+    struct stat sb;
+    int status = stat(name, &sb);
+    off_t file_size = sb.st_size;
+    void* buffer = calloc(file_size + 4, 1); // each char is one byte
+    int fd = open(name, O_RDONLY);
+    if (file_size > 0)
+        *size = read_exact(fd, buffer, file_size);
+    close(fd);
+    return buffer;
 }
