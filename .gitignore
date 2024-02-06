@@ -20,3 +20,5 @@ staff-*.c
 *.list
 *.mk
 *.a
+*.scratch
+staff
