@@ -7,8 +7,20 @@
 @ `2-reg-save-full.c`).
 @
 swi_trampoline:
-    asm_todo("implement this")
+    sub sp, sp, #68
+    stm sp, {r0-r14}^
 
+    add sp, sp, #60
+    stm sp, {lr}
+
+    add sp, sp, #4
+    mrs r0, spsr
+
+    stm sp, {r0}
+
+    sub sp, sp, #64
+    mov r0, sp
+    b do_syscall
     @ note: this trampoline does not resume.
     asm_not_reached();
 

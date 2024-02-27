@@ -115,15 +115,27 @@ static inline uint32_t cp14_dscr_get(void);
 coproc_mk(status, p14, 0, c0, c1, 0)
 
 // you'll need to define these and a bunch of other routines.
-static inline uint32_t cp15_dfsr_get(void) { todo("implement"); }
-static inline uint32_t cp15_ifar_get(void) { todo("implement"); }
-static inline uint32_t cp15_ifsr_get(void) { todo("implement"); }
-static inline uint32_t cp14_dscr_get(void) { todo("implement"); }
-static inline uint32_t cp14_wcr0_set(uint32_t r) { todo("implement"); }
 
-static inline void cp14_wvr0_set(uint32_t r) { todo("implement"); }
-static inline void cp14_bcr0_set(uint32_t r) { todo("implement"); }
-static inline void cp14_bvr0_set(uint32_t r) { todo("implement"); }
+coproc_mk(dfsr, p15, 0, c5, c0, 0) // got this from table 3-2 
+coproc_mk(ifar, p15, 0, c6, c0, 2) // got this from table 3-2
+coproc_mk(ifsr, p15, 0, c5, c0, 1) // got this from table 3-2
+coproc_mk(dscr, p14, 0, c0, c1, 0) // got this from table 13-9
+coproc_mk(wvr0, p14, 0, c0, c0, 6) // got this from table 13-9
+coproc_mk(wcr0, p14, 0, c0, c0, 7) // got this from table 13-9
+coproc_mk(bcr0, p14, 0, c0, c0, 5) // got this from table 13-9
+coproc_mk(bvr0, p14, 0, c0, c0, 4) // got this from table 13-9
+coproc_mk(wfar, p14, 0, c0, c6, 0) // got this from table 13-9
+coproc_mk(far, p15, 0, c0, c6, 0)  // got this from table 3-2 
+
+// static inline uint32_t cp15_dfsr_get(void) { todo("implement"); }
+// static inline uint32_t cp15_ifar_get(void) { todo("implement"); }
+// static inline uint32_t cp15_ifsr_get(void) { todo("implement"); }
+// static inline uint32_t cp14_dscr_get(void) { todo("implement"); }
+// static inline uint32_t cp14_wcr0_set(uint32_t r) { todo("implement"); }
+
+// static inline void cp14_wvr0_set(uint32_t r) { todo("implement"); }
+// static inline void cp14_bcr0_set(uint32_t r) { todo("implement"); }
+// static inline void cp14_bvr0_set(uint32_t r) { todo("implement"); }
 
 
 // return 1 if enabled, 0 otherwise.  
@@ -131,19 +143,23 @@ static inline void cp14_bvr0_set(uint32_t r) { todo("implement"); }
 //      could return its value instead of 1 (since is 
 //      non-zero).
 static inline int cp14_is_enabled(void) {
-    unimplemented();
+    uint32_t status = cp14_status_get();
+    return bit_is_off(status, 14) && bit_is_on(status, 15); // got this from page 13-9
 }
 
 // enable debug coprocessor 
 static inline void cp14_enable(void) {
     // if it's already enabled, just return?
     if(cp14_is_enabled())
-        panic("already enabled\n");
+        return;
 
     // for the core to take a debug exception, monitor debug mode has to be both 
     // selected and enabled --- bit 14 clear and bit 15 set.
-    unimplemented();
-
+    uint32_t status = cp14_status_get();
+    status = bit_clr(status, 14); // got this from page 13-9
+    status = bit_set(status, 15); // got this from page 13-9
+    cp14_status_set(status);
+    
     assert(cp14_is_enabled());
 }
 
@@ -152,28 +168,50 @@ static inline void cp14_disable(void) {
     if(!cp14_is_enabled())
         return;
 
-    unimplemented();
+    uint32_t status = cp14_status_get();
+    status = bit_set(status, 14); // got this from page 13-9
+    status = bit_clr(status, 15); // got this from page 13-9
+    cp14_status_set(status);
 
     assert(!cp14_is_enabled());
 }
 
 
 static inline int cp14_bcr0_is_enabled(void) {
-    unimplemented();
+    uint32_t bcr = cp14_bcr0_get();
+    return bit_is_on(bcr, 0); // got this from table 13-11 in page 13-19
 }
+
 static inline void cp14_bcr0_enable(void) {
-    unimplemented();
+    // check if already enabled
+    if (cp14_bcr0_is_enabled())
+        return;
+    uint32_t bcr = cp14_bcr0_get();
+    bcr = bit_set(bcr, 0); // got this from table 13-11 in page 13-19
+    bcr = bits_set(bcr, 1, 2, 0b11); // we wish to allow breakpoint trigger upon either supervisor or user access
+    bcr = bit_clr(bcr, 20); // we wish to disable linking
+    bcr = bits_set(bcr, 14, 15, 0b00); // we wish to allow breakpoint trigger in either secure/non-secure world
+    bcr = bits_set(bcr, 5, 8, 0b1111); // we want breakpoints to be programmed for Context ID comparison
+    cp14_bcr0_set(bcr);
 }
 static inline void cp14_bcr0_disable(void) {
-    unimplemented();
+    if (!cp14_bcr0_is_enabled())
+        return;
+    uint32_t bcr = cp14_bcr0_get();
+    bcr = bit_clr(bcr, 0); // got this from table 13-11 in page 13-19
+    cp14_bcr0_set(bcr);
 }
 
 // was this a brkpt fault?
 static inline int was_brkpt_fault(void) {
     // use IFSR and then DSCR
-    unimplemented();
 
-    return 0;
+    uint32_t ifsr = cp15_ifsr_get();
+    if (!bits_eq(ifsr, 0, 3, 0b0010)) // got this from table 3-63 in page 3-67 (checks if fault happened due to an debug event)
+        return 0;
+
+    uint32_t dscr = cp14_dscr_get();
+    return bits_eq(dscr, 2, 5, 0b0001); // got this from table 13-4 in page 13-11 (indicates whether a breakpoint has happened)
 }
 
 // was watchpoint debug fault caused by a load?
@@ -189,22 +227,52 @@ static inline int datafault_from_st(void) {
 // 13-33: tabl 13-23
 static inline int was_watchpt_fault(void) {
     // use DFSR then DSCR
-    unimplemented();
+
+    uint32_t dfsr = cp15_dfsr_get();
+    if (!bits_eq(dfsr, 0, 3, 0b0010))
+        return 0;
+    
+    uint32_t dscr = cp14_dscr_get();
+    return bits_eq(dscr, 2, 5, 0b0010);    
 }
 
 static inline int cp14_wcr0_is_enabled(void) {
-    unimplemented();
+    uint32_t wcr = cp14_wcr0_get();
+    return (
+        bit_is_on(wcr, 0)          && // check if watchpt is disabled 
+        bits_eq(wcr, 1, 2, 0b11)   && // check if access is set to 'either'
+        bit_is_off(wcr, 20)        && // check if linking is disabled
+        bits_eq(wcr, 3, 4, 0b11)   && // check that watchpt examines both loads/stores 
+        bits_eq(wcr, 14, 15, 0b00)    // check that watchpt matches in both secure/non-secure world
+    );
 }
+
 static inline void cp14_wcr0_enable(void) {
-    unimplemented();
+    if (cp14_wcr0_is_enabled())
+        panic("already enabled\n");
+    uint32_t wcr = cp14_wcr0_get();
+    wcr = bit_set(wcr, 0);             // got this from table 13-16 in page 13-22
+    wcr = bits_set(wcr, 1, 2, 0b11);   // got this from table 13-16 in page 13-22
+    wcr = bit_clr(wcr, 20);            // got this from table 13-16 in page 13-21
+    wcr = bits_set(wcr, 3, 4, 0b11);   // got this from table 13-16 in page 13-22
+    wcr = bits_set(wcr, 14, 15, 0b00); // got this from table 13-16 in page 13-22
+    wcr = bits_set(wcr, 5, 8, 0b1111); // got this from table 13-16 in page 13-22
+    cp14_wcr0_set(wcr);
 }
+
 static inline void cp14_wcr0_disable(void) {
-    unimplemented();
+    if (!cp14_wcr0_is_enabled())
+        return;
+    uint32_t wcr = cp14_wcr0_get();
+    wcr = bit_clr(wcr, 0);
+    cp14_wcr0_set(wcr);
+    assert(!cp14_wcr0_is_enabled());
 }
 
 // Get watchpoint fault using WFAR
 static inline uint32_t watchpt_fault_pc(void) {
-    unimplemented();
+    uint32_t wfar = cp14_wfar_get();
+    return wfar - 8; // located in page 13-12
 }
-    
+
 #endif

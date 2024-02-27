@@ -1,6 +1,6 @@
 // very simple version of single stepping.
-#ifndef __MINI_WATCH_H__
-#define __MINI_WATCH_H__
+#ifndef __MINI_STEP_H__
+#define __MINI_STEP_H__
 #include "full-except.h"
 
 // describes the fault: we use a struct so can add fields

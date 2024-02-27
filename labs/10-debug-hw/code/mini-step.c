@@ -25,11 +25,17 @@ static regs_t start_regs;
 static inline uint32_t mismatch_pc_set(uint32_t pc) {
     assert(single_step_on_p);
     uint32_t old_pc = cp14_bvr0_get();
-
     // set a mismatch (vs match) using bvr0 and bcr0 on
     // <pc>
-    todo("setup mismatch on <pc> using bvr0/bcr0");
 
+    cp14_bcr0_enable();
+    uint32_t b = cp14_bcr0_get();
+    b = bits_set(b, 21, 22, 0b10);
+
+    cp14_bcr0_set(b);
+    cp14_bvr0_set(pc);
+
+    assert(cp14_bcr0_is_enabled());
     assert( cp14_bvr0_get() == pc);
     return old_pc;
 }
@@ -53,7 +59,10 @@ static inline void mismatch_off(void) {
 
     // RMW bcr0 to disable breakpoint, 
     // make sure you do a prefetch_flush!
-    todo("turn mismatch off, but don't modify anything else");
+    uint32_t bcr = cp14_bcr0_get();
+    bcr = bits_set(bcr, 21, 22, 0b00);
+    bcr = bit_clr(bcr, 0);
+    cp14_bcr0_set(bcr);
 }
 
 // once the traced code calls this, it's done.
@@ -83,14 +92,19 @@ static void mismatch_fault(regs_t *r) {
     }
 
     step_fault_t f = {};
-    todo("setup fault handler and call step_handler");
-    todo("setup a mismatch on pc");
-
+    f = step_fault_mk(
+        cp14_bvr0_get(),
+        r
+    );
+    printk("fault_pc: %d\n", f.fault_pc);
+    step_handler(step_handler_data, &f);
+    cp14_bcr0_disable();
+    mismatch_pc_set(pc);
     // otherwise there is a race condition if we are 
     // stepping through the uart code --- note: we could
     // just check the pc and the address range of
     // uart.o
-    while(!uart_can_putc())
+    while(!uart_can_put8())
         ;
 
     switchto(r);
@@ -104,7 +118,11 @@ void mini_step_init(step_handler_t h, void *data) {
     step_handler_data = data;
     step_handler = h;
 
-    todo("setup the rest");
+    // todo("setup the rest");
+
+    full_except_install(0);
+    full_except_set_prefetch(mismatch_fault);
+    cp14_enable();
 
     // just started, should not be enabled.
     assert(!cp14_bcr0_is_enabled());
@@ -150,3 +168,5 @@ uint32_t mini_step_run(void (*fn)(void*), void *arg) {
     // return what the user set.
     return r.regs[0];
 }
+
+

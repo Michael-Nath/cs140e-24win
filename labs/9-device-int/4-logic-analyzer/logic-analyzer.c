@@ -6,6 +6,7 @@
  */
 #include "rpi.h"
 #include "timer-interrupt.h"
+
 #include "libc/circular.h"
 #include "sw-uart.h"
 #include "cycle-count.h"
@@ -14,7 +15,7 @@ static cq_t uartQ;
 
 enum { out_pin = 21, in_pin = 20 };
 static volatile unsigned n_rising_edge, n_falling_edge;
-
+static volatile unsigned last_cyc_time = 0;
 
 // client has to define this.
 void interrupt_vector(unsigned pc) {
@@ -29,7 +30,16 @@ void interrupt_vector(unsigned pc) {
     unsigned s = cycle_cnt_read();
 
     dev_barrier();
-    unimplemented();
+    if (gpio_event_detected(in_pin)) {
+        if (cq_empty(&uartQ)) {
+            cq_push32(&uartQ, 0);
+        } else {
+            cq_push32(&uartQ, s - last_cyc_time);
+        }
+        last_cyc_time = s;
+        cq_push32(&uartQ, !gpio_read(in_pin));
+        gpio_event_clear(in_pin);
+    }
     dev_barrier();
 }
 

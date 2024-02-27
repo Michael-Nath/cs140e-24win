@@ -98,6 +98,8 @@ enum {
     INT_STATUS = 0x3a,
     // p 28
     INT_ENABLE = 0x38,
+    // p 27
+    INT_PIN_CFG = 0x37,
 };
 
 // returns a scaled milligauss value given the
@@ -122,8 +124,8 @@ imu_xyz_t accel_scale(accel_t *h, imu_xyz_t xyz) {
 // pull the reading into a circular buffer
 // (similar to device lab).
 int accel_has_data(const accel_t *h) {
-    todo("check that have data");
-    return 1;
+    uint8_t interrupt_status = imu_rd(h->addr, INT_STATUS);
+    return interrupt_status & 0b1;
 }
 
 
@@ -133,7 +135,11 @@ int accel_has_data(const accel_t *h) {
 // i'd suggest playing w/ gdb or small C programs to see that what
 // C does matches your intuition.
 static short mg_raw(uint8_t lo, uint8_t hi) {
-    todo("combine both bytes (make sure sign extended)");
+    uint32_t mg = 0;
+    mg = bits_set(mg, 0, 7, lo);
+    mg = bits_set(mg, 8, 15, hi);
+    return (short) mg;
+    // todo("combine both bytes (make sure sign extended)");
 }
 
 // sanity testing code.
@@ -170,7 +176,8 @@ accel_t mpu6050_accel_init(uint8_t addr, unsigned accel_g) {
     test_mg(-1000, 0xbf, 0xf7, 2);
 
     // initialized your accel to 2g (accel_confi_reg)
-    todo("setup accel with 2g");
+    // todo("setup accel with 2g");
+    imu_wr(addr, accel_config_reg, g >> 2);
 
     output("accel_config_reg=%b\n", imu_rd(addr, accel_config_reg));
     return (accel_t) { .addr = addr, .g = g, .hz = 20 };
@@ -187,7 +194,7 @@ void mpu6050_reset(uint8_t addr) {
 
     // page 41: to reset device: set bit 7 = 1 in register
     // PWR_MGMT_1 (register 0x6b)
-    todo("reset device");
+    imu_wr(addr, PWR_MGMT_1, 1 << 7);
 
     // XXX: we should read different registers and see that they
     // went back to startup.
@@ -195,24 +202,26 @@ void mpu6050_reset(uint8_t addr) {
     // give time to shutdown, spin up.
     delay_ms(100);
 
-    if(bit_set(imu_rd(addr, PWR_MGMT_1), 6))
+    if(bit_is_on(imu_rd(addr, PWR_MGMT_1), 6))
         output("device booted up in sleep mode!\n");
 
     // clear sleep mode: (PWR_MGMT_1)
     // if you do *NOT* do this, then the device we have does not work.
     // according to my reading of the data sheet, the value of 0x6b should
     // be 0 after reset.  so i don't get this.
-    todo("clear sleep mode");
+    imu_wr(addr, PWR_MGMT_1, 0);
 
     delay_ms(100);
 
     // page 39: USER_CTRL (register 0x6a): reset:
-    //   - the signal path 
-    //   - i2c master mode 
-    //   - fifo
+    //   - the signal path (bit 0)
+    //   - i2c master mode (bit 1)
+    //   - fifo (bit 2)
+    // setting a 1 to these bits triggers a reset
+
     // not sure if redundant after device reset --- datasheet
     // unclear --- so we do to be sure.
-    todo("reset all these");
+    imu_wr(addr, USER_CTRL, 0b111); 
 
     delay_ms(100);
 
@@ -220,7 +229,8 @@ void mpu6050_reset(uint8_t addr) {
     // (INT_ENABLE) after you config (p27):
     // - latch to be held high until cleared;
     // - read to clear it.
-    todo("enable IMU interrupts so you can tell that data is ready");
+    imu_wr(addr, INT_PIN_CFG, 1 << 5); // page 27
+    imu_wr(addr, INT_ENABLE, 1); // enabling only data ready interrupt - page 28
 }
 
 // block until there is data and then return it (raw)
@@ -260,7 +270,10 @@ imu_xyz_t accel_rd(const accel_t *h) {
     //  - if this doesn't work, read regs one at a time.
     //  - you'll have to comine the two 8-bit unsigned
     //    regs into a signed 16 bit number using <mg_raw>
-    todo("implement burst reads and return as unscaled x,y,z");
+    imu_rd_n(addr, ACCEL_XOUT_H, regs, 6);
+    x = mg_raw(regs[1], regs[0]);
+    y = mg_raw(regs[3], regs[2]);
+    z = mg_raw(regs[5], regs[4]);
     
     return xyz_mk(x,y,z);
 }
@@ -274,9 +287,9 @@ imu_xyz_t accel_rd(const accel_t *h) {
 // gyro registers.
 enum {
     // p13, p6
-    CONFIG = 28, 
+    CONFIG = 26, 
     // p14, p6
-    GYRO_CONFIG = 29, 
+    GYRO_CONFIG = 27, 
 
     // p6, p14
     gyro_config_reg = 0x1b,
@@ -363,14 +376,21 @@ gyro_t mpu6050_gyro_init(uint8_t addr, unsigned gyro_dps) {
     }
 
     // you'll need to set CONFIG (p13) and GYRO_CONFIG (p14)
-    todo("initialize the gyro");
+    imu_wr(addr, CONFIG, 0b010); // bits 0 to 3 control frequency (setting to 4 yields 20hz freq)
+    uint32_t fs_sel_value = 0;
+    uint32_t dps_cpy = dps;
+    while (dps_cpy != 250) {
+        fs_sel_value++;
+        dps_cpy /= 2;
+    }
+    imu_wr(addr, GYRO_CONFIG, fs_sel_value);
     return (gyro_t) { .addr = addr, .dps = dps,  };
 }
 
 // use int or fifo to tell when data.
 int gyro_has_data(const gyro_t *h) {
-    todo("implement this");
-    return 1;
+    uint8_t interrupt_status = imu_rd(h->addr, INT_STATUS);
+    return interrupt_status & 0b1;
 }
 
 // return a single raw gyro reading.
@@ -379,6 +399,7 @@ imu_xyz_t gyro_rd(const gyro_t *h) {
 
     unsigned dps_scale = h->dps;
     uint8_t addr = h->addr;
+    uint8_t regs[6];
 
     while(!gyro_has_data(h))
         ;
@@ -386,6 +407,9 @@ imu_xyz_t gyro_rd(const gyro_t *h) {
     int x=0,y=0,z=00;
 
     // you'll need to combine the 8-bit regs into a 16-bit using <mg_raw>
-    todo("implement this");
+    imu_rd_n(addr, GYRO_XOUT_H, regs, 6);
+    x = mg_raw(regs[1], regs[0]);
+    y = mg_raw(regs[3], regs[2]);
+    z = mg_raw(regs[5], regs[4]);
     return xyz_mk(x,y,z);
 }

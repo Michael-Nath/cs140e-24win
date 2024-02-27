@@ -9,7 +9,7 @@
 SRC += src/gpio.c
 SRC += src/uart.c
 SRC += ../labs/8-uart/1-sw-uart-put8/sw-uart.c
-
+STAFF_OBJS  +=  ./staff-objs/kmalloc.o
 # you would add the path to yours.
 # STAFF_OBJS  +=  ./staff-objs/uart.o
 # STAFF_OBJS  +=  ./staff-objs/gpio-pud.o

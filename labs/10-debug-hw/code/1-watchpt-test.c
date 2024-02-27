@@ -13,6 +13,7 @@
 #include "vector-base.h"
 #include "armv6-debug-impl.h"
 #include "full-except.h"
+#include "bit-support.h"
 
 static int load_fault_n, store_fault_n;
 
@@ -75,7 +76,6 @@ void notmain(void) {
     full_except_install(0);
     full_except_set_data_abort(watchpt_fault);
 
-    todo("enable the debug coprocessor.");
     cp14_enable();
 
     /* 
@@ -93,6 +93,12 @@ void notmain(void) {
     // set watchpoint.
     assert(!cp14_wcr0_is_enabled());
     uint32_t b = 0;
+    b = bit_set(b, 0);
+    b = bits_set(b, 1, 2, 0b11);
+    b = bit_clr(b, 20);
+    b = bits_set(b, 3, 4, 0b11);
+    b = bits_set(b, 14, 15, 0b00);
+    b = bits_set(b, 5, 8, 0b1111);
     if(!b)
         panic("set b to the right bits for wcr0\n");
 

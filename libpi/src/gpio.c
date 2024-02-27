@@ -8,6 +8,7 @@
  * See rpi.h in this directory for the definitions.
  */
 #include "rpi.h"
+#include "rpi-interrupts.h"
 
 // see broadcomm documents for magic addresses.
 enum {
@@ -97,3 +98,29 @@ void gpio_set_function(unsigned pin, gpio_func_t function) {
   unsigned new_register_value = masked_out | (function << relative);
   PUT32((unsigned) corresponding_fsel, new_register_value); 
 }
+
+// int gpio_has_interrupts() {
+//   // check the correct IRQ_pending register
+//   int gpio_int_0_idx = 17; // gpio_int[0] is index 17 in IRQ_pending_2
+//   return GET32(IRQ_pending_2) & (1 << gpio_int_0_idx);
+// }
+
+// void gpio_int_rising_edge(unsigned pin) {
+//   // enable in the GPREN register
+//   or32(GPREN_0, 1 << pin);
+// }
+
+// void gpio_int_falling_edge(unsigned pin) {
+//   // enable in the GPFEN register
+//   or32(GPFEN_0, 1 << pin);
+// }
+
+// int gpio_event_detected(unsigned pin) {
+//   // check the GPEDS regiser
+//   return GET32(GPEDS_0) & (1 << pin);
+// }
+
+// void gpio_event_clear(unsigned pin) {
+//   // write to the GPEDS register
+//   or32(GPEDS_0, 1 << pin);
+// }

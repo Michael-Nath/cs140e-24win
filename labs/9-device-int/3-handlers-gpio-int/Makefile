@@ -1,6 +1,6 @@
 # to use your gpio-int.c swap these.
-# COMMON_SRC := ../2-gpio-int/gpio-int.c
-STAFF_OBJS += $(CS140E_2024_PATH)/libpi/staff-objs/gpio-int.o
+COMMON_SRC := $(CS140E_2024_PATH)/labs/9-device-int/2-gpio-int/gpio-int.c
+# STAFF_OBJS += $(CS140E_2024_PATH)/libpi/staff-objs/gpio-int.o
 
 #STAFF_OBJS += $(CS140E_2024_PATH)/libpi/staff-objs/interrupts-asm.o
 #STAFF_OBJS += $(CS140E_2024_PATH)/libpi/staff-objs/interrupts-vec-asm.o
@@ -30,6 +30,7 @@ PROGS = 1-timer.c
 
 # everything.
 PROGS = $(wildcard [123]-*.c)
+# PROGS = 2-rise-fall-edge.c 
 
 COMMON_SRC += test-interrupts.c
 COMMON_SRC += interrupt-vec.c interrupt-asm.S 

@@ -20,6 +20,14 @@ typedef enum {
     GPIO_FUNC_ALT5    = 2,
 } gpio_func_t;
 
+// enum {
+//     GPEDS_0 = 0x20200040, // GPIO Event Detect Status
+//     GPREN_0 = 0x2020004C, // GPIO Rising Edge Enable
+//     GPFEN_0 = 0x20200058, // GPIO Falling Edge Enable
+//     GPHEN_0 = 0x20200064, // GPIO High Detect Enable,
+//     GPLEN_0 = 0x20200070, // GPIO Low Detect Enable
+// };
+
 // set GPIO function for <pin> (input, output, alt...).  settings for other
 // pins should be unchanged.
 void gpio_set_function(unsigned pin, gpio_func_t function);
@@ -104,4 +112,12 @@ int gpio_event_detected(unsigned pin);
 // p96: have to write a 1 to the pin to clear the event.
 void gpio_event_clear(unsigned pin);
 
+static void or32(volatile void *addr, uint32_t val) {
+    dev_barrier();
+    put32(addr, get32(addr) | val);
+    dev_barrier();
+}
+// static void OR32(uint32_t addr, uint32_t val) {
+//     or32((volatile void*)addr, val);
+// }
 #endif
